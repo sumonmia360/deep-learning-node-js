@@ -16,7 +16,7 @@ const bootstrap = async () => {
   await client.connect();
   const DB = await client.db("toDosDB");
   console.log(
-    "Pinged your deployment. You successfully connected to MongoDB!!"
+    "Pinged your deployment. You successfully connected to MongoDB!!!"
   );
   const cltion = await DB.collection("toDos").insertOne({
     tile: "mongodb",
