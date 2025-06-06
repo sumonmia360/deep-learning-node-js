@@ -1,27 +1,55 @@
 import express, { Request, Response } from "express";
 const toDosRouter = express.Router();
-import fs from "fs";
-import path from "path";
+import { client } from "../../config/mongoDB";
+import { ObjectId } from "mongodb";
 
-const filePath = path.join(__dirname, "../../../db/todo.json");
-const AllToDoslData = fs.readFileSync(filePath, { encoding: "utf-8" });
-
-toDosRouter.get("/all-todos", (req: Request, res: Response) => {
-  res.json(AllToDoslData);
+toDosRouter.get("/all-todos", async (req: Request, res: Response) => {
+  const DB = await client.db("toDosDB");
+  const dbData = await DB.collection("toDos").find({}).toArray();
+  res.json(dbData);
 });
 
-toDosRouter.get("/:title", (req: Request, res: Response) => {
-  console.log(req.params);
+toDosRouter.get("/:id", async (req: Request, res: Response) => {
+  const id = req.params.id;
+  const DB = await client.db("toDosDB");
+  const dbData = await DB.collection("toDos").findOne({
+    _id: new ObjectId(id),
+  });
+  res.json(dbData);
 });
 
-toDosRouter.post("/create-todo", (req: Request, res: Response) => {
-  console.log(req.body);
+toDosRouter.post("/create-todo", async (req: Request, res: Response) => {
+  const { title, description, prority, isCompleted } = req.body;
+  const DB = await client.db("toDosDB");
+  const dbCollection = await DB.collection("toDos").insertOne({
+    title: title,
+    description: description,
+    prority: prority,
+    isCompleted: isCompleted,
+  });
 
-  res.send("Your ToDo was created!");
+  res.send(dbCollection);
 });
 
-toDosRouter.patch("/:title", (req: Request, res: Response) => {});
+toDosRouter.put("/update-todo/:id", async (req: Request, res: Response) => {
+  const id = req.params.id;
+  const { title, description, prority, isCompleted } = req.body;
+  const db = await client.db("toDosDB");
+  const conllection = await db.collection("toDos");
+  const updateData = await conllection.updateOne(
+    { _id: new ObjectId(id) },
+    { $set: { title, description, prority, isCompleted } },
+    { upsert: true }
+  );
+  res.json(updateData);
+});
 
-toDosRouter.delete("/:title", (req: Request, res: Response) => {});
+toDosRouter.delete("/delete-todo/:id", async (req: Request, res: Response) => {
+  const id = req.params.id;
+  const db = await client.db("toDosDB");
+  const collection = await db.collection("toDos");
+  const deleteOne = await collection.deleteOne({ _id: new ObjectId(id) });
+  res.json(deleteOne);
+});
 
 export { toDosRouter };
